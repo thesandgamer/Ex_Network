@@ -68,10 +68,15 @@ Packet* NetworkAgent::recvPacket(TCPsocket socket)
 
 	result = SDLNet_TCP_Recv(socket, packet, len);
 
+
 	if (result <= 0)
 	{
 		std::cout << "SDLNet_TCP_Recv: " << SDLNet_GetError() << "\n";
 		return nullptr;
+	}
+	else
+	{
+		std::cout << packet->msg << std::endl;
 	}
 
 	return packet;

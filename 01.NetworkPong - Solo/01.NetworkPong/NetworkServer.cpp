@@ -48,7 +48,7 @@ bool NetworkServer::establishConnection()
 			state = ServerState::SENDING;
 		break;
 	case ServerState::SENDING:
-		if (sendPacket(new Packet()))
+		if (sendPacket(new Packet("Server accept your connection")))
 			state = ServerState::RECEIVING;
 		break;
 	case ServerState::RECEIVING:
@@ -65,19 +65,38 @@ bool NetworkServer::establishConnection()
 
 bool NetworkServer::sendPacket(Packet* packet)
 {
-	return NetworkAgent::sendPacket(clientSocket, packet);
+	for (auto clientSocket : clientSockets)
+	{
+		return NetworkAgent::sendPacket(clientSocket, packet);
+	}
 }
 Packet* NetworkServer::recvPacket()
 {
-	return NetworkAgent::recvPacket(clientSocket);
+	if (SDLNet_CheckSockets(clientSet, 0) > 0)//Check si il y a une activité
+	{
+		for (auto clientSocket : clientSockets)
+		{
+			if (clientSocket && SDLNet_SocketReady(clientSocket) > 0)
+			{
+				return NetworkAgent::recvPacket(clientSocket);
+			}
+		}
+	}
 }
 
 void NetworkServer::beforeDestroy()
 {
-	SDLNet_TCP_Close(serverSocket);
+	for (auto serverSocket : serverSockets)
+	{
+		SDLNet_TCP_Close(serverSocket);
+
+	}
 	if (state == ServerState::CONNECTION_ESTABLISHED)
 	{
-		SDLNet_TCP_Close(clientSocket);
+		for (auto clientSocket : clientSockets)
+		{
+			SDLNet_TCP_Close(clientSocket);	//Ferme tous les connections qu'on à ouverrtes
+		}
 	}
 }
 
@@ -90,36 +109,48 @@ bool NetworkServer::openServerSocket()
 		return false;
 	}
 
-	serverSocket = SDLNet_TCP_Open(&ip);	//Ouvre la connection
+	TCPsocket serverSocket = SDLNet_TCP_Open(&ip);	//Ouvre la connection
+
 	if (!serverSocket)
 	{
 		std::cout << "SDLNet_TCP_Open: " << SDLNet_GetError() << "\n";
 		return false;
 	}
+	serverSockets.push_back(serverSocket);
+
 	std::cout << "TCP Read Port " << serverPort << " Opened Successfully! \n";
 	return true;
 }
 
 bool NetworkServer::pairWithClient()
 {
-	if (!serverSocket)
+	if (!serverSockets.size() > 0)
 	{
 		std::cout << "Can't send packet, read socket is not opened \n";
 		return false;
 	}
 
+	/*
 	if (clientSocket)
 	{
 		std::cout << "Client already paired \n";
 		return false;
 	}
+	*/
+	TCPsocket tempSocket = SDLNet_TCP_Accept(serverSockets.back());
 
-	if (clientSocket = SDLNet_TCP_Accept(serverSocket))	//Set la socket du client avec le premier client qui va se connecter
+	if (tempSocket)	//Set la socket du client avec le premier client qui va se connecter
 	{
 		std::cout << " Paired succesfully with client \n";
+		clientSockets.push_back(tempSocket);
+		SDLNet_TCP_AddSocket(clientSet, tempSocket);
+
+		//openServerSocket();
+
+
 		return true;
 	}
 
-	std::cout << " Could not pair with client \n";
+	std::cout << "\r Could not pair with client \n "<<std::flush;
 	return false;
 }

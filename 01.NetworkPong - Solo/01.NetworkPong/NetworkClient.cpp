@@ -43,7 +43,7 @@ bool NetworkClient::establishConnection()
 		break;
 
 	case ClientState::SENDING:
-		if (sendPacket(new Packet()))
+		if (sendPacket(new Packet("Client try to connect")))
 			state = ClientState::RECEIVING;
 		break;
 

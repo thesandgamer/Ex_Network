@@ -16,3 +16,7 @@ Packet::Packet(GameObject* gameObject): packetType{ PacketType::MISC },id{ gameO
 		direction = gameObject->getComponent<CompMove>()->getDirection();
 	}
 }
+
+Packet::Packet(string message): msg{ message }
+{
+}

@@ -1,6 +1,8 @@
 #pragma once
 #include "NetworkAgent.h"
 
+#include <vector>
+
 enum class ServerState
 {
 	Null,
@@ -20,11 +22,13 @@ public:
 	ServerState state;
 
 	// Server side
-	TCPsocket serverSocket{ nullptr };
+	std::vector<TCPsocket> serverSockets;
 	Uint16 serverPort{ 0 };
 
 	// Client side
-	TCPsocket clientSocket{ nullptr };
+	std::vector<TCPsocket> clientSockets;
+	SDLNet_SocketSet clientSet = SDLNet_AllocSocketSet(10);
+
 	bool readConfigFile() override;
 	bool establishConnection() override;
 	bool sendPacket(Packet* packet) override;
